@@ -40,24 +40,23 @@ using System.Linq;
 using System.Text;
 
 
-namespace SharpDisasm
+namespace SharpDisasm;
+
+/// <summary>
+/// The CPU architecture mode
+/// </summary>
+public enum ArchitectureMode
 {
     /// <summary>
-    /// The CPU architecture mode
+    /// 16-bit
     /// </summary>
-    public enum ArchitectureMode
-    {
-        /// <summary>
-        /// 16-bit
-        /// </summary>
-        x86_16 = 16,
-        /// <summary>
-        /// 32-bit
-        /// </summary>
-        x86_32 = 32,
-        /// <summary>
-        /// 64-bit
-        /// </summary>
-        x86_64 = 64
-    }
+    x86_16 = 16,
+    /// <summary>
+    /// 32-bit
+    /// </summary>
+    x86_32 = 32,
+    /// <summary>
+    /// 64-bit
+    /// </summary>
+    x86_64 = 64
 }

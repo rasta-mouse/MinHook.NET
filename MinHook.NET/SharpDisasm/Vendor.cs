@@ -39,24 +39,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SharpDisasm
+namespace SharpDisasm;
+
+/// <summary>
+/// Allows control over which vendor instructions should be disassembled
+/// </summary>
+public enum Vendor
 {
     /// <summary>
-    /// Allows control over which vendor instructions should be disassembled
+    /// Allow AMD instructions
     /// </summary>
-    public enum Vendor
-    {
-        /// <summary>
-        /// Allow AMD instructions
-        /// </summary>
-        AMD = 0,
-        /// <summary>
-        /// Allow Intel instructions
-        /// </summary>
-        Intel = 1,
-        /// <summary>
-        /// Allow both AMD and Intel instructions
-        /// </summary>
-        Any = 2
-    }
+    AMD = 0,
+    /// <summary>
+    /// Allow Intel instructions
+    /// </summary>
+    Intel = 1,
+    /// <summary>
+    /// Allow both AMD and Intel instructions
+    /// </summary>
+    Any = 2
 }

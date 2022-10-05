@@ -40,41 +40,39 @@ using System.Linq;
 using System.Text;
 
 
-namespace SharpDisasm.Udis86
+namespace SharpDisasm.Udis86;
+#pragma warning disable 1591
+/// <summary>
+/// A single entry within an instruction table
+/// </summary>
+public class ud_itab_entry
 {
-    #pragma warning disable 1591
-    /// <summary>
-    /// A single entry within an instruction table
-    /// </summary>
-    public class ud_itab_entry
+    public readonly ud_mnemonic_code Mnemonic;
+    public readonly ud_itab_entry_operand Operand1;
+    public readonly ud_itab_entry_operand Operand2;
+    public readonly ud_itab_entry_operand Operand3;
+    public readonly ud_itab_entry_operand Operand4;
+    public readonly UInt32 Prefix;
+
+    internal ud_itab_entry()
     {
-        public readonly ud_mnemonic_code Mnemonic;
-        public readonly ud_itab_entry_operand Operand1;
-        public readonly ud_itab_entry_operand Operand2;
-        public readonly ud_itab_entry_operand Operand3;
-        public readonly ud_itab_entry_operand Operand4;
-        public readonly UInt32 Prefix;
-
-        internal ud_itab_entry()
-        {
-        }
-
-        internal ud_itab_entry(
-            ud_mnemonic_code mnemonic,
-            ud_itab_entry_operand operand1,
-            ud_itab_entry_operand operand2,
-            ud_itab_entry_operand operand3,
-            ud_itab_entry_operand operand4,
-            UInt32 prefix
-            )
-        {
-            this.Mnemonic = mnemonic;
-            this.Operand1 = operand1;
-            this.Operand2 = operand2;
-            this.Operand3 = operand3;
-            this.Operand4 = operand4;
-            this.Prefix = prefix;
-        }
     }
-    #pragma warning restore 1591
+
+    internal ud_itab_entry(
+        ud_mnemonic_code mnemonic,
+        ud_itab_entry_operand operand1,
+        ud_itab_entry_operand operand2,
+        ud_itab_entry_operand operand3,
+        ud_itab_entry_operand operand4,
+        UInt32 prefix
+    )
+    {
+        this.Mnemonic = mnemonic;
+        this.Operand1 = operand1;
+        this.Operand2 = operand2;
+        this.Operand3 = operand3;
+        this.Operand4 = operand4;
+        this.Prefix = prefix;
+    }
 }
+#pragma warning restore 1591

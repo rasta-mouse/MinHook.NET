@@ -41,37 +41,35 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 
-namespace SharpDisasm.Udis86
+namespace SharpDisasm.Udis86;
+#pragma warning disable 1591
+[StructLayout(LayoutKind.Explicit)]
+public struct ud_lval
 {
-    #pragma warning disable 1591
-    [StructLayout(LayoutKind.Explicit)]
-    public struct ud_lval
-    {
-        [FieldOffset(0)]
-        public sbyte @sbyte;
-        [FieldOffset(0)]
-        public byte ubyte;
-        [FieldOffset(0)]
-        public short sword;
-        [FieldOffset(0)]
-        public ushort uword;
-        [FieldOffset(0)]
-        public Int32 sdword;
-        [FieldOffset(0)]
-        public UInt32 udword;
-        [FieldOffset(0)]
-        public Int64 sqword;
-        [FieldOffset(0)]
-        public UInt64 uqword;
+    [FieldOffset(0)]
+    public sbyte @sbyte;
+    [FieldOffset(0)]
+    public byte ubyte;
+    [FieldOffset(0)]
+    public short sword;
+    [FieldOffset(0)]
+    public ushort uword;
+    [FieldOffset(0)]
+    public Int32 sdword;
+    [FieldOffset(0)]
+    public UInt32 udword;
+    [FieldOffset(0)]
+    public Int64 sqword;
+    [FieldOffset(0)]
+    public UInt64 uqword;
 
-        [FieldOffset(0)]
-        public UInt16 ptr_seg;
-        [FieldOffset(2)]
-        public UInt32 ptr_off;
-        //  struct {
-        //  uint16_t seg;
-        //  uint32_t off;
-        //} ptr;
-    }
-    #pragma warning restore 1591
+    [FieldOffset(0)]
+    public UInt16 ptr_seg;
+    [FieldOffset(2)]
+    public UInt32 ptr_off;
+    //  struct {
+    //  uint16_t seg;
+    //  uint32_t off;
+    //} ptr;
 }
+#pragma warning restore 1591

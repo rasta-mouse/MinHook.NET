@@ -40,53 +40,52 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace SharpDisasm.Helpers
+namespace SharpDisasm.Helpers;
+
+/// <summary>
+/// 
+/// </summary>
+internal class AssemblyCodeMemory : IAssemblyCode
 {
+
+    private IntPtr pointer;
+    private int length;
+
     /// <summary>
-    /// 
+    /// Initializes a new instance of the <see cref="AssemblyCodeArray" /> class.
     /// </summary>
-    internal class AssemblyCodeMemory : IAssemblyCode
+    /// <param name="pointer">The pointer.</param>
+    /// <param name="length">The length.</param>
+    public AssemblyCodeMemory(IntPtr pointer, int length)
     {
-
-        private IntPtr pointer;
-        private int length;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AssemblyCodeArray" /> class.
-        /// </summary>
-        /// <param name="pointer">The pointer.</param>
-        /// <param name="length">The length.</param>
-        public AssemblyCodeMemory(IntPtr pointer, int length)
-        {
-            this.pointer = pointer;
-            this.length = length;
-        }
-
-        /// <summary>
-        /// Gets or sets the <see cref="System.Byte"/> at the specified index.
-        /// </summary>
-        /// <value>
-        /// The <see cref="System.Byte"/>.
-        /// </value>
-        /// <param name="index">The index.</param>
-        /// <returns></returns>
-        byte IAssemblyCode.this[int index]
-        {
-            get
-            {
-                if (index > length)
-                    throw new IndexOutOfRangeException();
-
-                return Marshal.ReadByte(pointer, index);
-            }
-        }
-
-        /// <summary>
-        /// Gets the length.
-        /// </summary>
-        /// <value>
-        /// The length.
-        /// </value>
-        int IAssemblyCode.Length { get { return length; } }
+        this.pointer = pointer;
+        this.length = length;
     }
+
+    /// <summary>
+    /// Gets or sets the <see cref="System.Byte"/> at the specified index.
+    /// </summary>
+    /// <value>
+    /// The <see cref="System.Byte"/>.
+    /// </value>
+    /// <param name="index">The index.</param>
+    /// <returns></returns>
+    byte IAssemblyCode.this[int index]
+    {
+        get
+        {
+            if (index > length)
+                throw new IndexOutOfRangeException();
+
+            return Marshal.ReadByte(pointer, index);
+        }
+    }
+
+    /// <summary>
+    /// Gets the length.
+    /// </summary>
+    /// <value>
+    /// The length.
+    /// </value>
+    int IAssemblyCode.Length { get { return length; } }
 }

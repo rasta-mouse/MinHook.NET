@@ -40,22 +40,20 @@ using System.Linq;
 using System.Text;
 
 
-namespace SharpDisasm.Udis86
+namespace SharpDisasm.Udis86;
+#pragma warning disable 1591
+/// <summary>
+/// A single operand of an entry within the instruction table
+/// </summary>
+public struct ud_itab_entry_operand
 {
-    #pragma warning disable 1591
-    /// <summary>
-    /// A single operand of an entry within the instruction table
-    /// </summary>
-    public struct ud_itab_entry_operand
-    {
-        public ud_operand_code type;
-        public ud_operand_size size;
+    public ud_operand_code type;
+    public ud_operand_size size;
 
-        public ud_itab_entry_operand(ud_operand_code type, ud_operand_size size)
-        {
-            this.type = type;
-            this.size = size;
-        }
+    public ud_itab_entry_operand(ud_operand_code type, ud_operand_size size)
+    {
+        this.type = type;
+        this.size = size;
     }
-    #pragma warning restore 1591
 }
+#pragma warning restore 1591

@@ -3,240 +3,287 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using static MinHook.Utils;
 
-namespace MinHook {
-    internal class MemorySlot {
+namespace MinHook;
 
-        public IntPtr Address { get; private set; }
-        public int Index { get; private set; }
+internal class MemorySlot
+{
 
-        public MemorySlot(IntPtr address, int index) {
-            Address = address;
-            Index = index;
+    public IntPtr Address { get; private set; }
+    public int Index { get; private set; }
+
+    public MemorySlot(IntPtr address, int index)
+    {
+        Address = address;
+        Index = index;
+    }
+}
+
+internal class MemoryBlock : IDisposable
+{
+
+    // Page size for Windows
+    static readonly uint MEMORY_BLOCK_SIZE = 0x1000;
+    static readonly uint MEMORY_SLOT_SIZE = 64;
+
+    public IntPtr BaseAddress { get; private set; }
+    ulong freeBitMap;
+
+    public MemoryBlock(IntPtr baseAddress)
+    {
+        this.BaseAddress = baseAddress;
+        freeBitMap = ulong.MaxValue;
+    }
+
+    ~MemoryBlock()
+    {
+        Dispose(false);
+    }
+
+    protected void Dispose(bool disposing)
+    {
+        if (BaseAddress != IntPtr.Zero)
+        {
+            VirtualFree(BaseAddress, (int)MEMORY_BLOCK_SIZE);
+            BaseAddress = IntPtr.Zero;
         }
     }
 
-    internal class MemoryBlock : IDisposable {
-
-        // Page size for Windows
-        static readonly uint MEMORY_BLOCK_SIZE = 0x1000;
-        static readonly uint MEMORY_SLOT_SIZE = 64;
-
-        public IntPtr BaseAddress { get; private set; }
-        ulong freeBitMap;
-
-        public MemoryBlock(IntPtr baseAddress) {
-            this.BaseAddress = baseAddress;
-            freeBitMap = ulong.MaxValue;
-        }
-
-        ~MemoryBlock() {
-            Dispose(false);
-        }
-
-        protected void Dispose(bool disposing) {
-            if(BaseAddress != IntPtr.Zero) {                
-                VirtualFree(BaseAddress, (int)MEMORY_BLOCK_SIZE, FreeType.Release);
-                BaseAddress = IntPtr.Zero;
-            }
-        }
-      
-        public bool IsFull() {
-            return freeBitMap == 0;
-        }
-
-        public MemorySlot AllocateSlot() {
-
-            if (IsFull()) {
-                throw new OutOfMemoryException("No free slots available");
-            }
-            
-            for(int idx = 0; idx < 64; idx++) {
-                if( ((freeBitMap >> idx) & 1) == 1) {
-                    freeBitMap ^= (1ul << idx);
-                    return new MemorySlot((IntPtr)((long)BaseAddress + (idx * MEMORY_SLOT_SIZE)), idx);
-                }
-            }
-
-            throw new InvalidOperationException("Unexpected memory block state");
-        }
-
-        public void FreeSlot(MemorySlot memorySlot) {
-
-            if((ulong)memorySlot.Address < (ulong)BaseAddress || (ulong)memorySlot.Address >= (ulong)BaseAddress + MEMORY_BLOCK_SIZE) {
-                throw new ArgumentException("memorySlot does not belong to this block");
-            }
-
-            freeBitMap |= (1ul << memorySlot.Index);
-        }
-
-        public void Dispose() {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }      
+    public bool IsFull()
+    {
+        return freeBitMap == 0;
     }
 
-    internal sealed class MemoryAllocator : IDisposable {
+    public MemorySlot AllocateSlot()
+    {
 
-        // Page size for Windows
-        static uint MEMORY_BLOCK_SIZE = 0x1000;
-
-        // Max range for seeking a memory block. (= 1024MB)
-        static uint MAX_MEMORY_RANGE = 0x40000000;
-
-        static List<MemoryBlock> memoryBlocks = new List<MemoryBlock>();
-
-        public MemoryAllocator() {
-
+        if (IsFull())
+        {
+            throw new OutOfMemoryException("No free slots available");
         }
 
-        public MemorySlot AllocateBuffer(IntPtr origin) {
-            MemoryBlock block = GetMemoryBlock(origin);               
-            return block.AllocateSlot();
+        for (var idx = 0; idx < 64; idx++)
+        {
+            if (((freeBitMap >> idx) & 1) == 1)
+            {
+                freeBitMap ^= 1ul << idx;
+                return new MemorySlot((IntPtr)((long)BaseAddress + idx * MEMORY_SLOT_SIZE), idx);
+            }
         }
 
-        MemoryBlock GetMemoryBlock(IntPtr origin) {
+        throw new InvalidOperationException("Unexpected memory block state");
+    }
 
-            IntPtr minAddr = IntPtr.Zero;
-            IntPtr maxAddr = IntPtr.Zero;
-            MemoryBlock result = null;
-            SYSTEM_INFO si = new SYSTEM_INFO();
-            GetSystemInfo(ref si);
+    public void FreeSlot(MemorySlot memorySlot)
+    {
 
-            if (IntPtr.Size == 8) {
+        if ((ulong)memorySlot.Address < (ulong)BaseAddress ||
+            (ulong)memorySlot.Address >= (ulong)BaseAddress + MEMORY_BLOCK_SIZE)
+        {
+            throw new ArgumentException("memorySlot does not belong to this block");
+        }
 
-                minAddr = si.lpMinimumApplicationAddress;
-                maxAddr = si.lpMaximumApplicationAddress;
+        freeBitMap |= 1ul << memorySlot.Index;
+    }
 
-                if ((ulong)origin > MAX_MEMORY_RANGE && (ulong)minAddr < (ulong)origin - MAX_MEMORY_RANGE)
-                    minAddr = (IntPtr)((ulong)origin - MAX_MEMORY_RANGE);
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+}
 
-                if ((ulong)maxAddr > (ulong)origin + MAX_MEMORY_RANGE)
-                    maxAddr = (IntPtr)((ulong)origin + MAX_MEMORY_RANGE);
+internal sealed class MemoryAllocator : IDisposable
+{
 
-                maxAddr = (IntPtr)((ulong)maxAddr - MEMORY_BLOCK_SIZE - 1);
+    // Page size for Windows
+    static uint MEMORY_BLOCK_SIZE = 0x1000;
+
+    // Max range for seeking a memory block. (= 1024MB)
+    static uint MAX_MEMORY_RANGE = 0x40000000;
+
+    static List<MemoryBlock> memoryBlocks = new();
+
+    public MemoryAllocator()
+    {
+
+    }
+
+    public MemorySlot AllocateBuffer(IntPtr origin)
+    {
+        var block = GetMemoryBlock(origin);
+        return block.AllocateSlot();
+    }
+
+    MemoryBlock GetMemoryBlock(IntPtr origin)
+    {
+        var minAddr = IntPtr.Zero;
+        var maxAddr = IntPtr.Zero;
+        MemoryBlock result = null;
+        var si = new SYSTEM_INFO();
+        GetSystemInfo(ref si);
+
+        if (IntPtr.Size == 8)
+        {
+
+            minAddr = si.lpMinimumApplicationAddress;
+            maxAddr = si.lpMaximumApplicationAddress;
+
+            if ((ulong)origin > MAX_MEMORY_RANGE && (ulong)minAddr < (ulong)origin - MAX_MEMORY_RANGE)
+                minAddr = (IntPtr)((ulong)origin - MAX_MEMORY_RANGE);
+
+            if ((ulong)maxAddr > (ulong)origin + MAX_MEMORY_RANGE)
+                maxAddr = (IntPtr)((ulong)origin + MAX_MEMORY_RANGE);
+
+            maxAddr = (IntPtr)((ulong)maxAddr - MEMORY_BLOCK_SIZE - 1);
+        }
+
+        foreach (var memoryBlock in memoryBlocks)
+        {
+
+            if (IntPtr.Size == 8 && ((ulong)memoryBlock.BaseAddress < (ulong)minAddr ||
+                                     (ulong)memoryBlock.BaseAddress >= (ulong)maxAddr))
+            {
+                continue;
             }
 
-            foreach(var memoryBlock in memoryBlocks) {
+            if (!memoryBlock.IsFull())
+            {
+                return memoryBlock;
+            }
+        }
 
-                if(IntPtr.Size == 8 && ((ulong)memoryBlock.BaseAddress < (ulong)minAddr || (ulong)memoryBlock.BaseAddress >= (ulong)maxAddr)) {
-                    continue;                   
+        //Couldn't find a free block, lets allocate another
+
+        if (IntPtr.Size == 8)
+        {
+
+            var alloc = origin;
+            while ((ulong)alloc >= (ulong)minAddr)
+            {
+
+                alloc = FindPrevFreeRegion(alloc, minAddr, si.dwAllocationGranularity);
+
+                if (alloc == IntPtr.Zero)
+                {
+                    break;
                 }
 
-                if (!memoryBlock.IsFull()) {
-                    return memoryBlock;
+                var baseAddr = VirtualAlloc(alloc, (IntPtr)MEMORY_BLOCK_SIZE,
+                    AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ExecuteReadWrite);
+
+                if (baseAddr != IntPtr.Zero)
+                {
+                    result = new MemoryBlock(baseAddr);
+                    break;
                 }
             }
 
-            //Couldn't find a free block, lets allocate another
+            if (result == null)
+            {
 
-            if(IntPtr.Size == 8) {
+                alloc = origin;
+                while ((ulong)alloc <= (ulong)maxAddr)
+                {
+                    alloc = FindNextFreeRegion(alloc, maxAddr, si.dwAllocationGranularity);
 
-                IntPtr alloc = origin;
-                while((ulong)alloc >= (ulong)minAddr) {
-
-                    alloc = FindPrevFreeRegion(alloc, minAddr, si.dwAllocationGranularity);
-
-                    if(alloc == IntPtr.Zero) {
+                    if (alloc == IntPtr.Zero)
                         break;
-                    }
 
-                    IntPtr baseAddr = VirtualAlloc(alloc, (IntPtr)MEMORY_BLOCK_SIZE, AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ExecuteReadWrite);
+                    var baseAddr = VirtualAlloc(alloc, (IntPtr)MEMORY_BLOCK_SIZE,
+                        AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ExecuteReadWrite);
 
-                    if (baseAddr != IntPtr.Zero) {
+                    if (baseAddr != IntPtr.Zero)
+                    {
                         result = new MemoryBlock(baseAddr);
                         break;
                     }
                 }
-
-                if(result == null) {
-
-                    alloc = origin;
-                    while((ulong)alloc <= (ulong)maxAddr) {
-                        alloc = FindNextFreeRegion(alloc, maxAddr, si.dwAllocationGranularity);
-
-                        if (alloc == IntPtr.Zero)
-                            break;
-
-                        IntPtr baseAddr = VirtualAlloc(alloc, (IntPtr)MEMORY_BLOCK_SIZE, AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ExecuteReadWrite);
-
-                        if (baseAddr != IntPtr.Zero) {
-                            result = new MemoryBlock(baseAddr);
-                            break;
-                        }
-                    }
-                }
-            } else {
-
-                IntPtr baseAddr = VirtualAlloc(IntPtr.Zero, (IntPtr)MEMORY_BLOCK_SIZE, AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ExecuteReadWrite);
-                if(baseAddr == IntPtr.Zero) {
-                    throw new OutOfMemoryException("Failed to allocate new block of memory");
-                }
-
-                result = new MemoryBlock(baseAddr);
             }
+        }
+        else
+        {
 
-            if(result == null) {
+            var baseAddr = VirtualAlloc(IntPtr.Zero, (IntPtr)MEMORY_BLOCK_SIZE,
+                AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ExecuteReadWrite);
+            if (baseAddr == IntPtr.Zero)
+            {
                 throw new OutOfMemoryException("Failed to allocate new block of memory");
             }
-                
-            memoryBlocks.Add(result);
-            return result;
+
+            result = new MemoryBlock(baseAddr);
         }
 
-        IntPtr FindPrevFreeRegion(IntPtr address, IntPtr minAddress, uint allocationGranularity) {
-
-            IntPtr tryAddr = (IntPtr) ((ulong)address - ( ((ulong)address % allocationGranularity) - allocationGranularity));
-            
-            while((ulong)tryAddr >= (ulong)minAddress) {
-
-                MEMORY_BASIC_INFORMATION mbi = new MEMORY_BASIC_INFORMATION();
-
-                if (VirtualQuery(tryAddr, ref mbi, Marshal.SizeOf(mbi)) == 0)
-                    break;
-              
-                if(mbi.State == MemoryState.Free) 
-                    return tryAddr;
-
-                if ((ulong)mbi.AllocationBase < allocationGranularity)
-                    break;
-
-                tryAddr = (IntPtr)((ulong)mbi.AllocationBase - allocationGranularity);
-            }
-
-            return IntPtr.Zero;
+        if (result == null)
+        {
+            throw new OutOfMemoryException("Failed to allocate new block of memory");
         }
 
-        IntPtr FindNextFreeRegion(IntPtr address, IntPtr maxAddress, uint allocationGranularity) {
+        memoryBlocks.Add(result);
+        return result;
+    }
 
-            IntPtr tryAddr = (IntPtr)((ulong)address - (((ulong)address % allocationGranularity) + allocationGranularity));
+    IntPtr FindPrevFreeRegion(IntPtr address, IntPtr minAddress, uint allocationGranularity)
+    {
 
-            while ((ulong)tryAddr <= (ulong)maxAddress) {
+        var tryAddr =
+            (IntPtr)((ulong)address - ((ulong)address % allocationGranularity - allocationGranularity));
 
-                MEMORY_BASIC_INFORMATION mbi = new MEMORY_BASIC_INFORMATION();
+        while ((ulong)tryAddr >= (ulong)minAddress)
+        {
 
-                if (VirtualQuery(tryAddr, ref mbi, Marshal.SizeOf(mbi)) == 0)
-                    break;
+            var mbi = new MEMORY_BASIC_INFORMATION();
 
-                if (mbi.State == MemoryState.Free)
-                    return tryAddr;
+            if (!VirtualQuery(tryAddr, ref mbi, Marshal.SizeOf(mbi)))
+                break;
 
-                if ((ulong)mbi.AllocationBase < allocationGranularity)
-                    break;
+            if (mbi.State == MemoryState.Free)
+                return tryAddr;
 
-                tryAddr = (IntPtr)((ulong)mbi.BaseAddress + (ulong)mbi.RegionSize);
+            if ((ulong)mbi.AllocationBase < allocationGranularity)
+                break;
 
-                tryAddr = (IntPtr)((long)tryAddr + (allocationGranularity - 1));
-                tryAddr = (IntPtr)((ulong)tryAddr - ((ulong)tryAddr % allocationGranularity));
-            }
-
-            return IntPtr.Zero;
+            tryAddr = (IntPtr)((ulong)mbi.AllocationBase - allocationGranularity);
         }
 
-        public void Dispose() {
-            foreach(var block in memoryBlocks) {
-                block.Dispose();
-            }
-            GC.SuppressFinalize(this);
+        return IntPtr.Zero;
+    }
+
+    IntPtr FindNextFreeRegion(IntPtr address, IntPtr maxAddress, uint allocationGranularity)
+    {
+
+        var tryAddr =
+            (IntPtr)((ulong)address - ((ulong)address % allocationGranularity + allocationGranularity));
+
+        while ((ulong)tryAddr <= (ulong)maxAddress)
+        {
+
+            var mbi = new MEMORY_BASIC_INFORMATION();
+
+            if (!VirtualQuery(tryAddr, ref mbi, Marshal.SizeOf(mbi)))
+                break;
+
+            if (mbi.State == MemoryState.Free)
+                return tryAddr;
+
+            if ((ulong)mbi.AllocationBase < allocationGranularity)
+                break;
+
+            tryAddr = (IntPtr)((ulong)mbi.BaseAddress + (ulong)mbi.RegionSize);
+
+            tryAddr = (IntPtr)((long)tryAddr + (allocationGranularity - 1));
+            tryAddr = (IntPtr)((ulong)tryAddr - (ulong)tryAddr % allocationGranularity);
         }
+
+        return IntPtr.Zero;
+    }
+
+    public void Dispose()
+    {
+        foreach (var block in memoryBlocks)
+        {
+            block.Dispose();
+        }
+
+        GC.SuppressFinalize(this);
     }
 }

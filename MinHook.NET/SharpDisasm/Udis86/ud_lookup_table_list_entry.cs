@@ -40,21 +40,19 @@ using System.Linq;
 using System.Text;
 
 
-namespace SharpDisasm.Udis86
+namespace SharpDisasm.Udis86;
+#pragma warning disable 1591
+public struct ud_lookup_table_list_entry
 {
-    #pragma warning disable 1591
-    public struct ud_lookup_table_list_entry
-    {
-        public ushort[] Table;
-        public ud_table_type Type;
-        public string Meta;
+    public ushort[] Table;
+    public ud_table_type Type;
+    public string Meta;
 
-        public ud_lookup_table_list_entry(ushort[] table, ud_table_type type, string meta)
-        {
-            this.Table = table;
-            this.Type = type;
-            this.Meta = meta;
-        }
+    public ud_lookup_table_list_entry(ushort[] table, ud_table_type type, string meta)
+    {
+        this.Table = table;
+        this.Type = type;
+        this.Meta = meta;
     }
-    #pragma warning restore 1591
 }
+#pragma warning restore 1591

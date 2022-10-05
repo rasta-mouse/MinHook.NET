@@ -39,42 +39,41 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SharpDisasm.Helpers
+namespace SharpDisasm.Helpers;
+
+/// <summary>
+/// 
+/// </summary>
+internal static class AssemblyCode
 {
 	/// <summary>
-	/// 
+	/// Copies to bytes.
 	/// </summary>
-	internal static class AssemblyCode
+	/// <param name="source">The source.</param>
+	/// <param name="offset">The offset.</param>
+	/// <param name="length">The length.</param>
+	/// <returns></returns>
+	public static byte[] CopyToBytes(this IAssemblyCode source, int offset, int length)
 	{
-		/// <summary>
-		/// Copies to bytes.
-		/// </summary>
-		/// <param name="source">The source.</param>
-		/// <param name="offset">The offset.</param>
-		/// <param name="length">The length.</param>
-		/// <returns></returns>
-		public static byte[] CopyToBytes(this IAssemblyCode source, int offset, int length)
+		var bytes = new byte[length];
+
+		for (var i = 0; i < length; i++)
 		{
-			var bytes = new byte[length];
-
-			for (int i = 0; i < length; i++)
-			{
-				bytes[i] = source[offset + i];
-			}
-
-			return bytes;
+			bytes[i] = source[offset + i];
 		}
 
-		/// <summary>
-		/// Copies the specified source.
-		/// </summary>
-		/// <param name="source">The source.</param>
-		/// <param name="offset">The offset.</param>
-		/// <param name="length">The length.</param>
-		/// <returns></returns>
-		public static IAssemblyCode Copy(this IAssemblyCode source, int offset, int length)
-		{
-			return new AssemblyCodeArray(source.CopyToBytes(offset, length));
-		}
+		return bytes;
+	}
+
+	/// <summary>
+	/// Copies the specified source.
+	/// </summary>
+	/// <param name="source">The source.</param>
+	/// <param name="offset">The offset.</param>
+	/// <param name="length">The length.</param>
+	/// <returns></returns>
+	public static IAssemblyCode Copy(this IAssemblyCode source, int offset, int length)
+	{
+		return new AssemblyCodeArray(source.CopyToBytes(offset, length));
 	}
 }

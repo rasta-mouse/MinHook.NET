@@ -44,7 +44,7 @@
 <#@ import namespace="System.IO" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ output extension=".cs" #>
-<# string fileName = this.Host.ResolvePath(System.IO.Path.ChangeExtension(System.IO.Path.GetFileName(this.Host.TemplateFile), ".xml")); #>
+<# var fileName = this.Host.ResolvePath(System.IO.Path.ChangeExtension(System.IO.Path.GetFileName(this.Host.TemplateFile), ".xml")); #>
 <# 
 //OptableXmlParse(System.IO.File.OpenText(fileName).ReadToEnd(), AddInsnDef); 
 //UdItabGenerator();
@@ -55,8 +55,8 @@
     UdItabGenerator.PushIndent = PushIndent;
     UdItabGenerator.Write = Write;
 
-    UdOpcodeTables tables = new UdOpcodeTables(System.IO.File.OpenText(fileName).ReadToEnd());
-    UdItabGenerator gen = new UdItabGenerator(tables);
+    var tables = new UdOpcodeTables(System.IO.File.OpenText(fileName).ReadToEnd());
+    var gen = new UdItabGenerator(tables);
 #>
 // Do not edit. File generated from optable.xml on <#= DateTime.Now.ToString("dd-MMM-yyyy hh:mm tt") #>
 using System;
@@ -101,11 +101,11 @@ namespace SharpDisasm.Udis86
         public class UdInsnDef
         {
             public string Mnemonic;
-            public List<String> Prefixes = new List<string>();
-            public List<String> Opcodes = new List<string>();
-            public List<String> Operands = new List<string>();
-            public List<String> CpuIds = new List<string>();
-            public Dictionary<String, String> OpcExts = new Dictionary<string, string>();
+            public List<String> Prefixes = new();
+            public List<String> Opcodes = new();
+            public List<String> Operands = new();
+            public List<String> CpuIds = new();
+            public Dictionary<String, String> OpcExts = new();
 
             public UdInsnDef(string mnemonic, string[] prefixes, string[] opcodes, string[] operands, string[] cpuid)
             {
@@ -199,7 +199,7 @@ namespace SharpDisasm.Udis86
             // vendor2idx -> uses OpcExtMap and OpcExtIndex instead
             // vex2idx    -> uses OpcExtMap and OpcExtIndex instead
 
-            static Dictionary<string, Dictionary<string, string>> OpcExtIndex = new Dictionary<string, Dictionary<string, string>>()
+            static Dictionary<string, Dictionary<string, string>> OpcExtIndex = new()
             {
                 // ssef2, ssef3, sse66
                 {"sse", new Dictionary<string, string>() {
@@ -250,22 +250,22 @@ namespace SharpDisasm.Udis86
             /// <summary>
             /// A mapping of opcode extensions to their representational values used in the opcode map.
             /// </summary>
-            public static Dictionary<string, Func<string, string>> OpcExtMap = new Dictionary<string, Func<string, string>>
-                {
+            public static Dictionary<string, Func<string, string>> OpcExtMap = new()
+            {
                     {"/rm",     (v) => String.Format("{0:x2}", Int32.Parse(v, System.Globalization.NumberStyles.HexNumber))},
                     {"/x87",    (v) => String.Format("{0:x2}", Int32.Parse(v, System.Globalization.NumberStyles.HexNumber))},
                     {"/3dnow",  (v) => String.Format("{0:x2}", Int32.Parse(v, System.Globalization.NumberStyles.HexNumber))},
                     {"/reg",    (v) => String.Format("{0:x2}", Int32.Parse(v, System.Globalization.NumberStyles.HexNumber))},
                     // modrm.mod
                     // (!11, 11) => (00, 01)
-                    {"/mod",    (v) => (v == "!11" ? "00" : "01")},
+                    {"/mod",    (v) => v == "!11" ? "00" : "01"},
                     // Mode extensions:
                     // (16, 32, 64) => (00, 01, 02)
                     {"/o",      (v) => String.Format("{0:x2}", Int32.Parse(v) / 32)},
                     {"/a",      (v) => String.Format("{0:x2}", Int32.Parse(v) / 32)},
                     // Disassembly mode
                     // (!64, 64) => (00b, 01b)
-                    {"/m",      (v) => (v == "64" ? "01" : "00")},
+                    {"/m",      (v) => v == "64" ? "01" : "00"},
                     // SSE
                     // none => 0
                     // f2   => 1
@@ -278,8 +278,8 @@ namespace SharpDisasm.Udis86
                             v = v.Substring(5);
                         return OpcExtIndex["vex"][v];
                     }},
-                    {"/vexw",   (v) => (v == "0" ? "00" : "01")},
-                    {"/vexl",   (v) => (v == "0" ? "00" : "01")},
+                    {"/vexw",   (v) => v == "0" ? "00" : "01"},
+                    {"/vexl",   (v) => v == "0" ? "00" : "01"},
                     // Vendor
                     {"/vendor", (v) => OpcExtIndex["vendor"][v]},
                 };
@@ -296,7 +296,7 @@ namespace SharpDisasm.Udis86
                 }
             }
 
-            static Dictionary<string, TableInfo> _TableInfo = new Dictionary<string, TableInfo>() {
+            static Dictionary<string, TableInfo> _TableInfo = new() {
                 {"opctbl"    , new TableInfo("UD_TAB__OPC_TABLE",  256) },
                 {"/sse"      , new TableInfo("UD_TAB__OPC_SSE",    4) },
                 {"/reg"      , new TableInfo("UD_TAB__OPC_REG",    8) },
@@ -325,8 +325,8 @@ namespace SharpDisasm.Udis86
             {
                 public int Compare(String x, String y)
                 {
-                    int xInt = Int32.Parse(x, System.Globalization.NumberStyles.HexNumber);
-                    int yInt = Int32.Parse(y, System.Globalization.NumberStyles.HexNumber);
+                    var xInt = Int32.Parse(x, System.Globalization.NumberStyles.HexNumber);
+                    var yInt = Int32.Parse(y, System.Globalization.NumberStyles.HexNumber);
 
                     return xInt.CompareTo(yInt);
                 }
@@ -347,8 +347,8 @@ namespace SharpDisasm.Udis86
 
             public void Add(string opc, object obj)
             {
-                string type = UdOpcodeTable.GetOpcodeType(opc);
-                string idx = UdOpcodeTable.GetOpcodeIdx(opc);
+                var type = UdOpcodeTable.GetOpcodeType(opc);
+                var idx = UdOpcodeTable.GetOpcodeIdx(opc);
                 if (this.Type != type || Entries.ContainsKey(idx))
                     throw new CollisionException();
                 Entries[idx] = obj;
@@ -356,8 +356,8 @@ namespace SharpDisasm.Udis86
 
             public object Lookup(string opc)
             {
-                string type = UdOpcodeTable.GetOpcodeType(opc);
-                string idx = UdOpcodeTable.GetOpcodeIdx(opc);
+                var type = UdOpcodeTable.GetOpcodeType(opc);
+                var idx = UdOpcodeTable.GetOpcodeIdx(opc);
                 if (this.Type != type)
                     throw new CollisionException(String.Format("{0} <-> {1}", this.Type, type));
                 if (Entries.ContainsKey(idx))
@@ -500,9 +500,9 @@ namespace SharpDisasm.Udis86
 
             UdInsnDef _invalidInsn;
             public UdOpcodeTable Root;
-            List<UdOpcodeTable> _tables = new List<UdOpcodeTable>();
-            List<UdInsnDef> _insns = new List<UdInsnDef>();
-            Dictionary<string, List<UdInsnDef>> _mnemonics = new Dictionary<string, List<UdInsnDef>>();
+            List<UdOpcodeTable> _tables = new();
+            List<UdInsnDef> _insns = new();
+            Dictionary<string, List<UdInsnDef>> _mnemonics = new();
 
             public UdOpcodeTables(string xml)
             {
@@ -514,7 +514,7 @@ namespace SharpDisasm.Udis86
                 _insns.Add(_invalidInsn);
 
                 // Construct UdOpcodeTables object from the given udis86 optable.xml
-                foreach (UdInsnDef insn in ParseOptableXml(xml))
+                foreach (var insn in ParseOptableXml(xml))
                 {
                     AddInsnDef(insn);
                 }
@@ -538,7 +538,7 @@ namespace SharpDisasm.Udis86
                     totalSize += table.Size;
                     totalEntries += table.NumEntries;
                 }
-                Log(String.Format("  Packing Ratio = {0}%", ((totalEntries * 100.0) / totalSize)));
+                Log(String.Format("  Packing Ratio = {0}%", totalEntries * 100.0 / totalSize));
                 Log("--------------------");
 
                 Pprint();
@@ -573,8 +573,8 @@ namespace SharpDisasm.Udis86
             {
                 foreach (var table in _tables)
                 {
-                    List<string> keys = new List<String>();
-                    List<object> sse = new List<object>();
+                    var keys = new List<String>();
+                    var sse = new List<object>();
 
                     foreach (var kv in table.Entries)
                     {
@@ -598,7 +598,7 @@ namespace SharpDisasm.Udis86
                         table.Entries[keys[i]] = sse[i];
                     }
                 }
-                List<UdOpcodeTable> uniqTables = new List<UdOpcodeTable>();
+                var uniqTables = new List<UdOpcodeTable>();
                 Action<UdOpcodeTable> genTableList = null;
                 genTableList = (tbl) =>
                 {
@@ -625,7 +625,7 @@ namespace SharpDisasm.Udis86
                 foreach (var pp in new string[] { null, "f2", "f3", "66" })
                     foreach (var m in new string[] { null, "0f", "0f38", "0f3a" })
                     {
-                        string vex = String.Empty;
+                        var vex = String.Empty;
                         if (pp == null && m == null)
                             continue;
                         if (pp == null)
@@ -687,8 +687,8 @@ namespace SharpDisasm.Udis86
 
             private void AddInsnDef(UdInsnDef insnDef)
             {
-                List<string> opcodes = new List<string>();
-                Dictionary<string, string> opcexts = new Dictionary<string, string>();
+                var opcodes = new List<string>();
+                var opcexts = new Dictionary<string, string>();
 
                 // pack plain opcodes first, and collect opcode extensions
                 foreach (var opc in insnDef.Opcodes)
@@ -736,7 +736,7 @@ namespace SharpDisasm.Udis86
                     // Construct a long-form definition of the avx instruction
                     opcodes.Insert(0, "c4");
                 }
-                else if (!opcexts.ContainsKey("/sse") && (opcodes.Count > 0 && opcodes[0] == "0f") && (opcodes.Count < 2 || opcodes[1] != "0f"))
+                else if (!opcexts.ContainsKey("/sse") && opcodes.Count > 0 && opcodes[0] == "0f" && (opcodes.Count < 2 || opcodes[1] != "0f"))
                 {
                     // Make all 2-byte opcode form instructions play nice with sse opcode maps
                     opcexts["/sse"] = "none";
@@ -746,7 +746,7 @@ namespace SharpDisasm.Udis86
                 insnDef.Opcodes.AddRange(opcodes);
 
                 // Legacy sse defs that get promoted to avx
-                Action<UdInsnDef, Dictionary<string, string>> fn = AddInsn;
+                var fn = AddInsn;
                 if (insnDef.CpuIds.Contains("avx") && opcexts.ContainsKey("/sse"))
                     fn = AddSSE2AVXInsn;
 
@@ -863,11 +863,11 @@ namespace SharpDisasm.Udis86
             /// <returns></returns>
             private static IEnumerable<UdInsnDef> ParseOptableXml(string xml)
             {
-                XDocument doc = XDocument.Parse(xml);
+                var doc = XDocument.Parse(xml);
 
-                XNode topNode = doc.FirstNode;
+                var topNode = doc.FirstNode;
 
-                while (topNode != null && ((topNode as XElement) == null || (topNode as XElement).Name != "x86optable"))
+                while (topNode != null && (topNode as XElement == null || (topNode as XElement).Name != "x86optable"))
                     topNode = topNode.NextNode;
 
                 if (topNode as XElement != null)
@@ -883,10 +883,10 @@ namespace SharpDisasm.Udis86
                             continue;
                         }
 
-                        string mnemonic = (from n in instruction.Elements(XName.Get("mnemonic", ""))
+                        var mnemonic = (from n in instruction.Elements(XName.Get("mnemonic", ""))
                                            select n.Value).FirstOrDefault();
-                        string vendor = String.Empty;
-                        string[] cpuid = new string[] { };
+                        var vendor = String.Empty;
+                        var cpuid = new string[] { };
 
                         foreach (var node in instruction.Elements())
                         {
@@ -900,9 +900,9 @@ namespace SharpDisasm.Udis86
                         {
                             if (node.Name == "def")
                             {
-                                string[] pfx = new string[] { };
-                                string[] opc = new string[] { };
-                                string[] opr = new string[] { };
+                                var pfx = new string[] { };
+                                var opc = new string[] { };
+                                var opr = new string[] { };
 
                                 string localVendor = null;
                                 string[] localCpuid = null;
@@ -936,7 +936,7 @@ namespace SharpDisasm.Udis86
             #region Dictionaries and static data
 
             #region OperandDict
-            public static Dictionary<string, string[]> OperandDict = new Dictionary<string, string[]>() {
+            public static Dictionary<string, string[]> OperandDict = new() {
                 {"Av"       , new string[] {    "OP_A"        , "SZ_V"     }},
                 {"E"        , new string[] {    "OP_E"        , "SZ_NA"    }},
                 {"Eb"       , new string[] {    "OP_E"        , "SZ_B"     }},
@@ -1084,7 +1084,7 @@ namespace SharpDisasm.Udis86
             #endregion
 
             // opcode prefix dictionary
-            public static Dictionary<string, string> PrefixDict = new Dictionary<string, string>() 
+            public static Dictionary<string, string> PrefixDict = new() 
             { 
                 {"rep"      , "P_str"},   
                 {"repz"     , "P_strz"},   
@@ -1102,7 +1102,7 @@ namespace SharpDisasm.Udis86
                 {"cast"     , "P_cast"}
             };
 
-            static List<String> MnemonicAliases = new List<string>(new string[] { "invalid", "3dnow", "none", "db", "pause" });
+            static List<String> MnemonicAliases = new(new string[] { "invalid", "3dnow", "none", "db", "pause" });
 
             #endregion
 
@@ -1114,13 +1114,13 @@ namespace SharpDisasm.Udis86
             #endregion
 
             UdOpcodeTables _tables;
-            Dictionary<UdInsnDef, int> _insnIndexMap = new Dictionary<UdInsnDef, int>();
-            Dictionary<UdOpcodeTable, int> _tableIndexMap = new Dictionary<UdOpcodeTable, int>();
+            Dictionary<UdInsnDef, int> _insnIndexMap = new();
+            Dictionary<UdOpcodeTable, int> _tableIndexMap = new();
             public UdItabGenerator(UdOpcodeTables tables)
             {
                 _tables = tables;
 
-                int i = 0;
+                var i = 0;
                 foreach (var insn in tables.GetInsnList())
                 {
                     _insnIndexMap[insn] = i++;
@@ -1203,8 +1203,8 @@ namespace SharpDisasm.Udis86
                 Write("internal static readonly ud_itab_entry[] ud_itab = new ud_itab_entry[]\r\n{{\r\n");
                 foreach (var e in _tables.GetInsnList())
                 {
-                    string[] opr_c = new string[] { "O_NONE", "O_NONE", "O_NONE", "O_NONE" }; // OpDefs
-                    List<string> pfx_c = new List<string>();
+                    var opr_c = new string[] { "O_NONE", "O_NONE", "O_NONE", "O_NONE" }; // OpDefs
+                    var pfx_c = new List<string>();
                     var opr = e.Operands;
                     for (var i = 0; i < Math.Min(4, opr.Count); i++)
                     {

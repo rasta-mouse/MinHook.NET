@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net40;net45</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>A fully managed C# port of the MinHook hooking library for native functions</Description>
     <PackageProjectUrl>https://github.com/ccob/minhook.net</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ccob/minhook.net</RepositoryUrl>
     <PackageTags>hook api detour trampoline managed .net</PackageTags>
     <Version>1.1.1</Version>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>10</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -26,5 +27,8 @@
     <None Remove=".gitattributes" />
     <None Remove=".gitignore" />
     <None Remove="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="DInvoke.DynamicInvoke" Version="1.0.4" />
   </ItemGroup>
 </Project>

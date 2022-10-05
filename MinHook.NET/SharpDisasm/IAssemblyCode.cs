@@ -39,30 +39,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SharpDisasm
+namespace SharpDisasm;
+
+/// <summary>
+///
+/// </summary>
+public interface IAssemblyCode
 {
+
     /// <summary>
-    ///
+    /// Gets or sets the <see cref="System.Byte"/> at the specified index.
     /// </summary>
-    public interface IAssemblyCode
-    {
+    /// <value>
+    /// The <see cref="System.Byte"/>.
+    /// </value>
+    /// <param name="index">The index.</param>
+    /// <returns></returns>
+    byte this[int index] { get; }
 
-        /// <summary>
-        /// Gets or sets the <see cref="System.Byte"/> at the specified index.
-        /// </summary>
-        /// <value>
-        /// The <see cref="System.Byte"/>.
-        /// </value>
-        /// <param name="index">The index.</param>
-        /// <returns></returns>
-        byte this[int index] { get; }
-
-        /// <summary>
-        /// Gets the length.
-        /// </summary>
-        /// <value>
-        /// The length.
-        /// </value>
-        int Length { get; }
-    }
+    /// <summary>
+    /// Gets the length.
+    /// </summary>
+    /// <value>
+    /// The length.
+    /// </value>
+    int Length { get; }
 }

@@ -42,215 +42,214 @@ using System.Text;
 
 using SharpDisasm.Helpers;
 
-namespace SharpDisasm
+namespace SharpDisasm;
+
+/// <summary>
+/// Represents a decoded instruction.
+/// </summary>
+public class Instruction
 {
     /// <summary>
-    /// Represents a decoded instruction.
+    /// Instruction Offset
     /// </summary>
-    public class Instruction
+    public ulong Offset { get; private set; }
+
+    /// <summary>
+    /// Program counter
+    /// </summary>
+    public ulong PC { get; private set; }
+
+    /// <summary>
+    /// Will contain a copy of the original binary instruction if <see cref="Disassembler.CopyBinaryToInstruction"/> is true.
+    /// </summary>
+    public byte[] Bytes { get; private set; }
+
+    /// <summary>
+    /// Mnemonic
+    /// </summary>
+    public SharpDisasm.Udis86.ud_mnemonic_code Mnemonic { get; private set; }
+
+    /// <summary>
+    /// The instruction operands (maximum 3)
+    /// </summary>
+    public Operand[] Operands { get; private set; }
+
+    /// <summary>
+    /// The length of the instruction in bytes
+    /// </summary>
+    public int Length { get; private set; }
+
+    /// <summary>
+    /// Is the ModRM field present
+    /// </summary>
+    public bool HasModRM { get { return have_modrm != 0; } }
+
+    /// <summary>
+    /// The instructions ModRM field
+    /// </summary>
+    public byte ModRM { get { return modrm; } }
+
+    /// <summary>
+    /// Indicates whether the instruction was successfully decoded.
+    /// </summary>
+    public bool Error { get; private set; }
+
+    /// <summary>
+    /// The reason an instruction was not successfully decoded.
+    /// </summary>
+    public string ErrorMessage { get; private set; }
+
+    #region Low-level instruction information
+
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte pfx_rex;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte pfx_seg;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte pfx_opr;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte pfx_adr;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte pfx_lock;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte pfx_str;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte pfx_rep;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte pfx_repe;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte pfx_repne;
+
+    /// <summary>
+    /// The operand mode (16-,32-, or 64-bit), i.e. we could be reading a 16-bit value from a 32-bit address, in which case opr_mode would be 16, while adr_mode would be 32.
+    /// </summary>
+    internal byte opr_mode;
+
+    /// <summary>
+    /// The memory addressing mode of the instruction (16-,32-, or 64-bit)
+    /// </summary>
+    internal byte adr_mode;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte br_far;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte br_near;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte have_modrm;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte modrm;
+    /// <summary>
+    /// Low-level decode information
+    /// </summary>
+    internal byte primary_opcode;
+
+    #endregion
+
+    /// <summary>
+    /// The instruction architecture as configured within the constructor of <see cref="Disassembler"/>
+    /// </summary>
+    public ArchitectureMode dis_mode;
+
+    /// <summary>
+    /// The instruction table entry that applies to this instruction
+    /// </summary>
+    internal SharpDisasm.Udis86.ud_itab_entry itab_entry;
+
+    internal Instruction(ref Udis86.ud u, bool keepBinary)
     {
-        /// <summary>
-        /// Instruction Offset
-        /// </summary>
-        public ulong Offset { get; private set; }
+        this.Offset = u.insn_offset;
+        this.PC = u.pc;
+        this.Mnemonic = u.mnemonic;
 
-        /// <summary>
-        /// Program counter
-        /// </summary>
-        public ulong PC { get; private set; }
-
-        /// <summary>
-        /// Will contain a copy of the original binary instruction if <see cref="Disassembler.CopyBinaryToInstruction"/> is true.
-        /// </summary>
-        public byte[] Bytes { get; private set; }
-
-        /// <summary>
-        /// Mnemonic
-        /// </summary>
-        public SharpDisasm.Udis86.ud_mnemonic_code Mnemonic { get; private set; }
-
-        /// <summary>
-        /// The instruction operands (maximum 3)
-        /// </summary>
-        public Operand[] Operands { get; private set; }
-
-        /// <summary>
-        /// The length of the instruction in bytes
-        /// </summary>
-        public int Length { get; private set; }
-
-        /// <summary>
-        /// Is the ModRM field present
-        /// </summary>
-        public bool HasModRM { get { return have_modrm != 0; } }
-
-        /// <summary>
-        /// The instructions ModRM field
-        /// </summary>
-        public byte ModRM { get { return modrm; } }
-
-        /// <summary>
-        /// Indicates whether the instruction was successfully decoded.
-        /// </summary>
-        public bool Error { get; private set; }
-
-        /// <summary>
-        /// The reason an instruction was not successfully decoded.
-        /// </summary>
-        public string ErrorMessage { get; private set; }
-
-        #region Low-level instruction information
-
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte pfx_rex;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte pfx_seg;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte pfx_opr;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte pfx_adr;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte pfx_lock;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte pfx_str;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte pfx_rep;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte pfx_repe;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte pfx_repne;
-
-        /// <summary>
-        /// The operand mode (16-,32-, or 64-bit), i.e. we could be reading a 16-bit value from a 32-bit address, in which case opr_mode would be 16, while adr_mode would be 32.
-        /// </summary>
-        internal byte opr_mode;
-
-        /// <summary>
-        /// The memory addressing mode of the instruction (16-,32-, or 64-bit)
-        /// </summary>
-        internal byte adr_mode;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte br_far;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte br_near;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte have_modrm;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte modrm;
-        /// <summary>
-        /// Low-level decode information
-        /// </summary>
-        internal byte primary_opcode;
-
-        #endregion
-
-        /// <summary>
-        /// The instruction architecture as configured within the constructor of <see cref="Disassembler"/>
-        /// </summary>
-        public ArchitectureMode dis_mode;
-
-        /// <summary>
-        /// The instruction table entry that applies to this instruction
-        /// </summary>
-        internal SharpDisasm.Udis86.ud_itab_entry itab_entry;
-
-        internal Instruction(ref Udis86.ud u, bool keepBinary)
+        // Add operands
+        var operands = new List<Operand>(4);
+        if (u.operand[0].type != Udis86.ud_type.UD_NONE)
         {
-            this.Offset = u.insn_offset;
-            this.PC = u.pc;
-            this.Mnemonic = u.mnemonic;
-
-            // Add operands
-            List<Operand> operands = new List<Operand>(4);
-            if (u.operand[0].type != Udis86.ud_type.UD_NONE)
+            operands.Add(new Operand(u.operand[0]));
+            if (u.operand[1].type != Udis86.ud_type.UD_NONE)
             {
-                operands.Add(new Operand(u.operand[0]));
-                if (u.operand[1].type != Udis86.ud_type.UD_NONE)
+                operands.Add(new Operand(u.operand[1]));
+                if (u.operand[2].type != Udis86.ud_type.UD_NONE)
                 {
-                    operands.Add(new Operand(u.operand[1]));
-                    if (u.operand[2].type != Udis86.ud_type.UD_NONE)
-                    {
-                        operands.Add(new Operand(u.operand[2]));
-                        if (u.operand[3].type != Udis86.ud_type.UD_NONE) operands.Add(new Operand(u.operand[3]));
-                    }
+                    operands.Add(new Operand(u.operand[2]));
+                    if (u.operand[3].type != Udis86.ud_type.UD_NONE) operands.Add(new Operand(u.operand[3]));
                 }
             }
-            this.Operands = operands.ToArray();
-
-            this.Length = u.inp_ctr;
-
-            // Copy the instruction bytes
-            if (keepBinary)
-            {
-				this.Bytes = u.inp_buf.CopyToBytes(u.inp_buf_index - this.Length, this.Length);
-            }
-
-            if (u.error > 0)
-            {
-                this.Error = true;
-                this.ErrorMessage = u.errorMessage;
-            }
-            else if (this.Mnemonic == Udis86.ud_mnemonic_code.UD_Iinvalid)
-            {
-                this.Error = true;
-                this.ErrorMessage = "Invalid instruction";
-            }
-
-            this.itab_entry = u.itab_entry;
-            this.dis_mode = (ArchitectureMode) u.dis_mode;
-            this.pfx_rex        = u.pfx_rex;
-            this.pfx_seg        = u.pfx_seg;
-            this.pfx_opr        = u.pfx_opr;
-            this.pfx_adr        = u.pfx_adr;
-            this.pfx_lock       = u.pfx_lock;
-            this.pfx_str        = u.pfx_str;
-            this.pfx_rep        = u.pfx_rep;
-            this.pfx_repe       = u.pfx_repe;
-            this.pfx_repne      = u.pfx_repne;
-            this.opr_mode       = u.opr_mode;
-            this.adr_mode       = u.adr_mode;
-            this.br_far         = u.br_far;
-            this.br_near        = u.br_near;
-            this.have_modrm     = u.have_modrm;
-            this.modrm          = u.modrm;
-            this.primary_opcode = u.primary_opcode;
         }
+        this.Operands = operands.ToArray();
 
-        /// <summary>
-        /// Output the instruction using the <see cref="Translators.Translator"/> assigned to <see cref="Disassembler.Translator"/>.
-        /// </summary>
-        /// <returns>The translated instruction (e.g. Intel ASM syntax)</returns>
-        public override string ToString()
+        this.Length = u.inp_ctr;
+
+        // Copy the instruction bytes
+        if (keepBinary)
         {
-            if (Disassembler.Translator == null)
-                throw new ArgumentNullException("Translator", "Disassembler.Translator must be configured to use Instruction.ToString");
-            return Disassembler.Translator.Translate(this);
+            this.Bytes = u.inp_buf.CopyToBytes(u.inp_buf_index - this.Length, this.Length);
         }
+
+        if (u.error > 0)
+        {
+            this.Error = true;
+            this.ErrorMessage = u.errorMessage;
+        }
+        else if (this.Mnemonic == Udis86.ud_mnemonic_code.UD_Iinvalid)
+        {
+            this.Error = true;
+            this.ErrorMessage = "Invalid instruction";
+        }
+
+        this.itab_entry = u.itab_entry;
+        this.dis_mode = (ArchitectureMode) u.dis_mode;
+        this.pfx_rex        = u.pfx_rex;
+        this.pfx_seg        = u.pfx_seg;
+        this.pfx_opr        = u.pfx_opr;
+        this.pfx_adr        = u.pfx_adr;
+        this.pfx_lock       = u.pfx_lock;
+        this.pfx_str        = u.pfx_str;
+        this.pfx_rep        = u.pfx_rep;
+        this.pfx_repe       = u.pfx_repe;
+        this.pfx_repne      = u.pfx_repne;
+        this.opr_mode       = u.opr_mode;
+        this.adr_mode       = u.adr_mode;
+        this.br_far         = u.br_far;
+        this.br_near        = u.br_near;
+        this.have_modrm     = u.have_modrm;
+        this.modrm          = u.modrm;
+        this.primary_opcode = u.primary_opcode;
+    }
+
+    /// <summary>
+    /// Output the instruction using the <see cref="Translators.Translator"/> assigned to <see cref="Disassembler.Translator"/>.
+    /// </summary>
+    /// <returns>The translated instruction (e.g. Intel ASM syntax)</returns>
+    public override string ToString()
+    {
+        if (Disassembler.Translator == null)
+            throw new ArgumentNullException("Translator", "Disassembler.Translator must be configured to use Instruction.ToString");
+        return Disassembler.Translator.Translate(this);
     }
 }

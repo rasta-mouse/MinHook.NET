@@ -40,18 +40,17 @@ using System.Linq;
 using System.Text;
 
 
-namespace SharpDisasm.Udis86
+namespace SharpDisasm.Udis86;
+
+/// <summary>
+/// Register classes
+/// </summary>
+internal enum reg_class
 {
-    /// <summary>
-    /// Register classes
-    /// </summary>
-    internal enum reg_class
-    {
-        REGCLASS_GPR,
-        REGCLASS_MMX,
-        REGCLASS_CR,
-        REGCLASS_DB,
-        REGCLASS_SEG,
-        REGCLASS_XMM
-    }
+    REGCLASS_GPR,
+    REGCLASS_MMX,
+    REGCLASS_CR,
+    REGCLASS_DB,
+    REGCLASS_SEG,
+    REGCLASS_XMM
 }

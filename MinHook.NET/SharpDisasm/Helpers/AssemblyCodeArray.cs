@@ -39,40 +39,39 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SharpDisasm.Helpers
+namespace SharpDisasm.Helpers;
+
+/// <summary>
+///
+/// </summary>
+internal class AssemblyCodeArray : IAssemblyCode
 {
+    private byte[] buffer;
+
     /// <summary>
-    ///
+    /// Initializes a new instance of the <see cref="AssemblyCodeArray"/> class.
     /// </summary>
-    internal class AssemblyCodeArray : IAssemblyCode
+    /// <param name="buffer">The buffer.</param>
+    public AssemblyCodeArray(byte[] buffer)
     {
-        private byte[] buffer;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AssemblyCodeArray"/> class.
-        /// </summary>
-        /// <param name="buffer">The buffer.</param>
-        public AssemblyCodeArray(byte[] buffer)
-        {
-            this.buffer = buffer;
-        }
-
-        /// <summary>
-        /// Gets or sets the <see cref="System.Byte"/> at the specified index.
-        /// </summary>
-        /// <value>
-        /// The <see cref="System.Byte"/>.
-        /// </value>
-        /// <param name="index">The index.</param>
-        /// <returns></returns>
-        byte IAssemblyCode.this[int index] { get { return buffer[index]; } }
-
-        /// <summary>
-        /// Gets the length.
-        /// </summary>
-        /// <value>
-        /// The length.
-        /// </value>
-        int IAssemblyCode.Length { get { return buffer.Length; } }
+        this.buffer = buffer;
     }
+
+    /// <summary>
+    /// Gets or sets the <see cref="System.Byte"/> at the specified index.
+    /// </summary>
+    /// <value>
+    /// The <see cref="System.Byte"/>.
+    /// </value>
+    /// <param name="index">The index.</param>
+    /// <returns></returns>
+    byte IAssemblyCode.this[int index] { get { return buffer[index]; } }
+
+    /// <summary>
+    /// Gets the length.
+    /// </summary>
+    /// <value>
+    /// The length.
+    /// </value>
+    int IAssemblyCode.Length { get { return buffer.Length; } }
 }

@@ -36,78 +36,77 @@
 
 using System;
 
-namespace SharpDisasm.Udis86
+namespace SharpDisasm.Udis86;
+
+internal static class BitOps
 {
-    internal static class BitOps
+    #region Instruction Table prefix bits
+
+    public const UInt32 P_none = 0;
+
+    public const UInt32 P_inv64 = 1 << 0;
+    public static UInt32 P_INV64(UInt32 n) { return (n >> 0) & 1; }
+    public const UInt32 P_def64 = 1 << 1;
+    public static UInt32 P_DEF64(UInt32 n) { return (n >> 1) & 1; }
+
+    public const UInt32 P_oso = 1 << 2;
+    public static UInt32 P_OSO(UInt32 n) { return (n >> 2) & 1; }
+    public const UInt32 P_aso = 1 << 3;
+    public static UInt32 P_ASO(UInt32 n) { return (n >> 3) & 1; }
+    public const UInt32 P_rexb = 1 << 4;
+    public static UInt32 P_REXB(UInt32 n) { return (n >> 4) & 1; }
+    public const UInt32 P_rexw = 1 << 5;
+    public static UInt32 P_REXW(UInt32 n) { return (n >> 5) & 1; }
+    public const UInt32 P_rexr = 1 << 6;
+    public static UInt32 P_REXR(UInt32 n) { return (n >> 6) & 1; }
+    public const UInt32 P_rexx = 1 << 7;
+    public static UInt32 P_REXX(UInt32 n) { return (n >> 7) & 1; }
+
+    public const UInt32 P_seg = 1 << 8;
+    public static UInt32 P_SEG(UInt32 n) { return (n >> 8) & 1; }
+
+    public const UInt32 P_vexl = 1 << 9;
+    public static UInt32 P_VEXL(UInt32 n) { return (n >> 9) & 1; }
+    public const UInt32 P_vexw = 1 << 10;
+    public static UInt32 P_VEXW(UInt32 n) { return (n >> 10) & 1; }
+
+    public const UInt32 P_str = 1 << 11;
+    public static UInt32 P_STR(UInt32 n) { return (n >> 11) & 1; }
+    public const UInt32 P_strz = 1 << 12;
+    public static UInt32 P_STR_ZF(UInt32 n) { return (n >> 12) & 1; }
+
+    #endregion
+
+    #region REX prefix bits
+
+    public static byte REX_W(byte r) { return (byte)((0xF & r) >> 3); }
+    public static byte REX_R(byte r) { return (byte)((0x7 & r) >> 2); }
+    public static byte REX_X(byte r) { return (byte)((0x3 & r) >> 1); }
+    public static byte REX_B(byte r) { return (byte)((0x1 & r) >> 0); }
+    public static uint REX_PFX_MASK(uint n)
     {
-        #region Instruction Table prefix bits
-
-        public const UInt32 P_none = (0);
-
-        public const UInt32 P_inv64 = (1 << 0);
-        public static UInt32 P_INV64(UInt32 n) { return (n >> 0) & 1; }
-        public const UInt32 P_def64 = (1 << 1);
-        public static UInt32 P_DEF64(UInt32 n) { return (n >> 1) & 1; }
-
-        public const UInt32 P_oso = (1 << 2);
-        public static UInt32 P_OSO(UInt32 n) { return (n >> 2) & 1; }
-        public const UInt32 P_aso = (1 << 3);
-        public static UInt32 P_ASO(UInt32 n) { return (n >> 3) & 1; }
-        public const UInt32 P_rexb = (1 << 4);
-        public static UInt32 P_REXB(UInt32 n) { return (n >> 4) & 1; }
-        public const UInt32 P_rexw = (1 << 5);
-        public static UInt32 P_REXW(UInt32 n) { return (n >> 5) & 1; }
-        public const UInt32 P_rexr = (1 << 6);
-        public static UInt32 P_REXR(UInt32 n) { return (n >> 6) & 1; }
-        public const UInt32 P_rexx = (1 << 7);
-        public static UInt32 P_REXX(UInt32 n) { return (n >> 7) & 1; }
-
-        public const UInt32 P_seg = (1 << 8);
-        public static UInt32 P_SEG(UInt32 n) { return (n >> 8) & 1; }
-
-        public const UInt32 P_vexl = (1 << 9);
-        public static UInt32 P_VEXL(UInt32 n) { return (n >> 9) & 1; }
-        public const UInt32 P_vexw = (1 << 10);
-        public static UInt32 P_VEXW(UInt32 n) { return (n >> 10) & 1; }
-
-        public const UInt32 P_str = (1 << 11);
-        public static UInt32 P_STR(UInt32 n) { return (n >> 11) & 1; }
-        public const UInt32 P_strz = (1 << 12);
-        public static UInt32 P_STR_ZF(UInt32 n) { return (n >> 12) & 1; }
-
-        #endregion
-
-        #region REX prefix bits
-
-        public static byte REX_W(byte r) { return (byte)((0xF & r) >> 3); }
-        public static byte REX_R(byte r) { return (byte)((0x7 & r) >> 2); }
-        public static byte REX_X(byte r) { return (byte)((0x3 & r) >> 1); }
-        public static byte REX_B(byte r) { return (byte)((0x1 & r) >> 0); }
-        public static uint REX_PFX_MASK(uint n)
-        {
-            return       ((P_REXW(n) << 3) |
-                          (P_REXR(n) << 2) |
-                          (P_REXX(n) << 1) |
-                          (P_REXB(n) << 0));
-        }
-
-        #endregion
-
-        #region Scale Index Base bits
-
-        public static byte SIB_S(byte b) { return (byte)(b >> 6); }
-        public static byte SIB_I(byte b) { return (byte)((b >> 3) & 7); }
-        public static byte SIB_B(byte b) { return (byte)(b & 7); }
-
-        #endregion
-
-        #region MODRM bits
-
-        public static byte MODRM_REG(byte b) { return (byte)((b >> 3) & 7); }
-        public static byte MODRM_NNN(byte b) { return (byte)((b >> 3) & 7); }
-        public static byte MODRM_MOD(byte b) { return (byte)((b >> 6) & 3); }
-        public static byte MODRM_RM(byte b) { return (byte)(b & 7); }
-
-        #endregion
+        return       (P_REXW(n) << 3) |
+                     (P_REXR(n) << 2) |
+                     (P_REXX(n) << 1) |
+                     (P_REXB(n) << 0);
     }
+
+    #endregion
+
+    #region Scale Index Base bits
+
+    public static byte SIB_S(byte b) { return (byte)(b >> 6); }
+    public static byte SIB_I(byte b) { return (byte)((b >> 3) & 7); }
+    public static byte SIB_B(byte b) { return (byte)(b & 7); }
+
+    #endregion
+
+    #region MODRM bits
+
+    public static byte MODRM_REG(byte b) { return (byte)((b >> 3) & 7); }
+    public static byte MODRM_NNN(byte b) { return (byte)((b >> 3) & 7); }
+    public static byte MODRM_MOD(byte b) { return (byte)((b >> 6) & 3); }
+    public static byte MODRM_RM(byte b) { return (byte)(b & 7); }
+
+    #endregion
 }
